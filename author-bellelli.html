@@ -15,40 +15,19 @@
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="index.html#authors-section" class="active">Authors</a></li>
+            <li><a href="library.html">Library</a></li>
             <li><a href="about.html">About</a></li>
         </ul>
     </nav>
     <main class="page-container">
         <h1 class="page-title">Works by Fulgenzio Bellelli</h1>
-        <div class="works-list">
-            
-            <div class="work-item glass">
-                <div class="work-image-container">
-                    <img src="BellelliPrima.png" alt="Cover">
-                </div>
-                <div class="work-details">
-                    <h3>Mens Augustini: De Modo Reparationis Humanae Naturae post Lapsum (Pars Prima)</h3>
-                    <div class="work-buttons">
-                        <a href="viewer.html?file=Mens_Augustini_De_modo_reparationis_huma_PRIMA.pdf&title=Mens+Augustini+(Pars+Prima)" class="btn">Original (Latin)</a>
-                        <a href="#" class="btn disabled">Translation: SOON</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="work-item glass">
-                <div class="work-image-container">
-                    <img src="BellelliAltera.png" alt="Cover">
-                </div>
-                <div class="work-details">
-                    <h3>Mens Augustini: De Modo Reparationis Humanae Naturae post Lapsum (Pars Altera)</h3>
-                    <div class="work-buttons">
-                        <a href="viewer.html?file=Mens_Augustini_de_modo_reparationis_huma_ALTERA.pdf&title=Mens+Augustini+(Pars+Altera)" class="btn">Original (Latin)</a>
-                        <a href="#" class="btn disabled">Translation: SOON</a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        <div id="works-list" class="works-list"></div>
     </main>
+    <script src="library-data.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            initAuthorWorks("Fulgenzio Bellelli", "works-list");
+        });
+    </script>
 </body>
 </html>

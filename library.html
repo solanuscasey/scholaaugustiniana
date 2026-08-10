@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library - Academia Augustiniana</title>
+    <meta name="description" content="Searchable collection of theological and philosophical texts.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="logo">Academia Augustiniana</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="authors.html">Authors</a></li>
+            <li><a href="library.html" class="active">Library</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <main class="library-container">
+        <!-- Left Sidebar: Controls and list of texts -->
+        <aside class="library-sidebar glass">
+            <h1 style="font-family: var(--font-heading); font-size: 1.8rem; color: var(--gold); margin-bottom: 0.5rem;">Library Catalog</h1>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Search and filter theological sources.</p>
+
+            <div class="library-controls">
+                <input id="library-search" type="search" placeholder="Search title, author, tag…">
+                <select id="library-sort">
+                    <option value="author">Sort: Author</option>
+                    <option value="title">Sort: Title</option>
+                    <option value="year">Sort: Year</option>
+                </select>
+                <select id="library-tradition">
+                    <option value="">All traditions</option>
+                </select>
+            </div>
+
+            <small id="library-status">Connecting to database...</small>
+
+            <div class="library-list" id="library-list">
+                <!-- Text cards will be dynamically injected here -->
+            </div>
+        </aside>
+
+        <!-- Right Preview Panel: Details and embedded PDF viewer -->
+        <section class="library-preview-panel glass">
+            <div id="library-details" class="preview-details">
+                <h2>Select a text</h2>
+                <p>Select an entry from the catalog to display the PDF document viewer.</p>
+            </div>
+
+            <div class="library-iframe-container">
+                <iframe
+                    id="library-viewer"
+                    title="Selected theology text PDF"
+                    referrerpolicy="strict-origin-when-cross-origin">
+                </iframe>
+            </div>
+        </section>
+    </main>
+
+    <!-- Shared data layer (config, helpers, loadLibraryTexts, etc.) -->
+    <script src="library-data.js"></script>
+
+    <script>
+        // ── State & DOM refs ────────────────────────────────────────────────
+        const state = { texts: [], selectedId: null };
+
+        const el = {
+            search:   document.querySelector("#library-search"),
+            sort:     document.querySelector("#library-sort"),
+            tradition:document.querySelector("#library-tradition"),
+            status:   document.querySelector("#library-status"),
+            list:     document.querySelector("#library-list"),
+            details:  document.querySelector("#library-details"),
+            viewer:   document.querySelector("#library-viewer")
+        };
+
+        // ── Select a text card ──────────────────────────────────────────────
+        function selectText(id) {
+            state.selectedId = id;
+            const text = state.texts.find(t => t.id === id);
+
+            if (!text) {
+                el.details.innerHTML = `<h2>Select a text</h2><p>Select an entry from the catalog to display the PDF document viewer.</p>`;
+                el.viewer.src = "";
+                el.viewer.style.display = "none";
+                return;
+            }
+
+            // Highlight active card
+            document.querySelectorAll(".library-card").forEach(card => {
+                card.classList.toggle("active", card.dataset.id === id);
+            });
+
+            const yearText      = text.year      ? ` (${escapeHtml(text.year)})` : "";
+            const authorText    = text.author    ? escapeHtml(text.author) : "Unknown Author";
+            const traditionText = text.tradition ? ` • ${escapeHtml(text.tradition)}` : "";
+
+            el.details.innerHTML = `
+                <h2>${escapeHtml(text.title)}</h2>
+                <p><strong>${authorText}</strong>${yearText}${traditionText}</p>
+                ${text.description
+                    ? `<p style="margin-top:0.55rem;font-style:italic;color:var(--text-primary);">${escapeHtml(text.description)}</p>`
+                    : ""}
+                ${text.tags
+                    ? `<div class="preview-tags">${text.tags.split(',').map(t => `<span>${escapeHtml(t.trim())}</span>`).join('')}</div>`
+                    : ""}
+                ${text.pdfUrl
+                    ? `<a class="btn" style="display:inline-block;margin-top:1.2rem;font-size:0.9rem;" href="${escapeHtml(toDriveOpenUrl(text.pdfUrl))}" target="_blank" rel="noopener noreferrer">Open PDF in new tab ↗</a>`
+                    : ""}
+            `;
+
+            if (text.pdfUrl) {
+                el.viewer.style.display = "block";
+                el.viewer.src = toDrivePreviewUrl(text.pdfUrl);
+            } else {
+                el.viewer.style.display = "none";
+                el.viewer.src = "";
+            }
+        }
+
+        // ── Render the filterable / sortable card list ──────────────────────
+        function renderList() {
+            const query      = normalize(el.search.value).toLowerCase();
+            const sortVal    = el.sort.value;
+            const tradVal    = el.tradition.value;
+
+            let filtered = state.texts.filter(text => {
+                const matchSearch = !query
+                    || normalize(text.title).toLowerCase().includes(query)
+                    || normalize(text.author).toLowerCase().includes(query)
+                    || normalize(text.tags).toLowerCase().includes(query)
+                    || normalize(text.description).toLowerCase().includes(query);
+
+                const matchTrad = !tradVal || text.tradition === tradVal;
+                return matchSearch && matchTrad;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortVal === "author") return normalize(a.author).localeCompare(normalize(b.author));
+                if (sortVal === "title")  return normalize(a.title).localeCompare(normalize(b.title));
+                if (sortVal === "year") {
+                    return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
+                }
+                return 0;
+            });
+
+            if (filtered.length === 0) {
+                el.list.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text-secondary);">No matching texts found.</div>`;
+                return;
+            }
+
+            el.list.innerHTML = filtered.map(text => {
+                const yearText   = text.year   ? ` (${escapeHtml(text.year)})` : "";
+                const authorText = text.author ? escapeHtml(text.author) : "Unknown Author";
+                const isActive   = text.id === state.selectedId ? "active" : "";
+                return `
+                    <button class="library-card ${isActive}" data-id="${escapeHtml(text.id)}">
+                        <strong>${escapeHtml(text.title)}</strong>
+                        <small>${authorText}${yearText}</small>
+                    </button>`;
+            }).join('');
+
+            el.list.querySelectorAll(".library-card").forEach(card => {
+                card.addEventListener("click", () => selectText(card.dataset.id));
+            });
+        }
+
+        // ── Populate tradition dropdown ──────────────────────────────────────
+        function initTraditions() {
+            const traditions = [...new Set(state.texts.map(t => t.tradition).filter(Boolean))].sort();
+            el.tradition.innerHTML = '<option value="">All traditions</option>'
+                + traditions.map(tr => `<option value="${escapeHtml(tr)}">${escapeHtml(tr)}</option>`).join('');
+        }
+
+        // ── Bootstrap ───────────────────────────────────────────────────────
+        async function init() {
+            try {
+                el.status.textContent = "Loading library texts…";
+                state.texts = await loadLibraryTexts();
+                el.status.textContent = `Loaded ${state.texts.length} source(s) successfully.`;
+            } catch (err) {
+                console.error(err);
+                el.status.textContent = `Error: ${err.message} — showing demo data.`;
+                state.texts = LIBRARY_DEMO_TEXTS.filter(t => ["true","yes","1"].includes(normalize(t.public).toLowerCase()));
+            }
+
+            initTraditions();
+            renderList();
+            if (state.texts.length > 0) selectText(state.texts[0].id);
+        }
+
+        el.search.addEventListener("input", renderList);
+        el.sort.addEventListener("change", renderList);
+        el.tradition.addEventListener("change", renderList);
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>

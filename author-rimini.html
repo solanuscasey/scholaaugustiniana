@@ -15,40 +15,19 @@
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="index.html#authors-section" class="active">Authors</a></li>
+            <li><a href="library.html">Library</a></li>
             <li><a href="about.html">About</a></li>
         </ul>
     </nav>
     <main class="page-container">
         <h1 class="page-title">Works by Gregory of Rimini</h1>
-        <div class="works-list">
-            
-            <div class="work-item glass">
-                <div class="work-image-container">
-                    <img src="RiminiPrimum.png" alt="Cover">
-                </div>
-                <div class="work-details">
-                    <h3>Lectura Super Primum Sententiarum (Distinctiones 19–48)</h3>
-                    <div class="work-buttons">
-                        <a href="viewer.html?file=RiminiPrimum.pdf&title=Lectura+Super+Primum+Sententiarum" class="btn">Original (Latin)</a>
-                        <a href="#" class="btn disabled">Translation: SOON</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="work-item glass">
-                <div class="work-image-container">
-                    <img src="RiminiSecundum.png" alt="Cover">
-                </div>
-                <div class="work-details">
-                    <h3>Lectura Super Secundum Sententiarum (Distinctiones 24–44)</h3>
-                    <div class="work-buttons">
-                        <a href="viewer.html?file=RiminiSecundum.pdf&title=Lectura+Super+Secundum+Sententiarum" class="btn">Original (Latin)</a>
-                        <a href="#" class="btn disabled">Translation: SOON</a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        <div id="works-list" class="works-list"></div>
     </main>
+    <script src="library-data.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            initAuthorWorks("Gregory of Rimini", "works-list");
+        });
+    </script>
 </body>
 </html>

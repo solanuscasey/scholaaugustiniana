@@ -1,0 +1,292 @@
+:root {
+    --bg-dark: #121013;
+    --text-primary: #e8e2d2;
+    --text-secondary: #a39b88;
+    --gold: #d4af37;
+    --crimson: #7a1f1f;
+    --glass-bg: rgba(18, 16, 19, 0.7);
+    --glass-border: rgba(212, 175, 55, 0.25);
+    --font-heading: 'Cinzel', serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Home Body Background */
+.home-body {
+    background-image: url('Augustine.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Glassmorphism Classes */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+}
+
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 4rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar .logo {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--gold);
+}
+
+/* Hero Section */
+.hero {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 80px;
+}
+
+.hero-content {
+    text-align: center;
+    padding: 4rem;
+    border-radius: 8px;
+    max-width: 800px;
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.hero h1 {
+    font-family: var(--font-heading);
+    font-size: 4.5rem;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+}
+
+.hero p {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 2.5rem;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    background: linear-gradient(135deg, var(--gold), #a67c00);
+    color: #111;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+}
+
+/* Authors Section on Home Page */
+#authors-section {
+    background: linear-gradient(to bottom, transparent, var(--bg-dark) 20%);
+    padding: 6rem 2rem;
+}
+
+/* Page Layout */
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 120px 2rem 4rem 2rem;
+}
+
+.page-title {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+/* Authors Grid */
+.authors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.author-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    text-align: center;
+    padding-bottom: 2rem;
+}
+
+.author-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.author-image {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    border-bottom: 2px solid var(--gold);
+    filter: sepia(0.3) contrast(1.1);
+}
+
+.author-name {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin: 1.5rem 0 0.5rem 0;
+}
+
+.author-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+}
+
+.btn {
+    text-decoration: none;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    transition: background 0.3s ease, color 0.3s ease;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    text-align: center;
+}
+
+.btn:hover:not(.disabled) {
+    background: var(--gold);
+    color: #111;
+}
+
+.btn.disabled {
+    border-color: #555;
+    color: #888;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Works List */
+.works-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.work-item {
+    padding: 2rem;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.work-image-container {
+    flex-shrink: 0;
+    width: 180px;
+}
+
+.work-image-container img {
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid var(--gold);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.work-details {
+    flex-grow: 1;
+}
+
+.work-details h3 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.work-details p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.work-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .work-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    .work-buttons {
+        justify-content: center;
+    }
+}

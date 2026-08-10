@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Academia Augustiniana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        .pdf-viewer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            margin: 2rem 0;
+        }
+        .pdf-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .pdf-btn {
+            background: var(--gold);
+            color: #111;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.2s, background 0.3s;
+        }
+        .pdf-btn:hover {
+            background: #e6c860;
+            transform: scale(1.05);
+        }
+        .page-info {
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        #pdf-canvas {
+            border: 1px solid var(--glass-border);
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="logo">Academia Augustiniana</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#authors-section" class="active">Authors</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+    <main class="page-container">
+        <div class="reader-container" style="max-width: 1000px; margin: 0 auto; background: var(--glass-bg); padding: 4rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+            <header class="reader-header" style="text-align: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 2rem;">
+                <h1 class="reader-title" id="document-title" style="font-family: var(--font-heading); font-size: 2rem; color: var(--gold);">Loading Document...</h1>
+            </header>
+            
+            <div class="translation-content">
+                <div class="pdf-viewer-container">
+                    <div class="pdf-controls">
+                        <button id="prev-page" class="pdf-btn">Previous</button>
+                        <span class="page-info">Page <span id="page-num"></span> of <span id="page-count"></span></span>
+                        <button id="next-page" class="pdf-btn">Next</button>
+                    </div>
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const pdfFile = urlParams.get('file');
+        const docTitle = urlParams.get('title') || 'Document Reader';
+        
+        document.getElementById('document-title').textContent = docTitle;
+        document.title = docTitle + ' - Academia Augustiniana';
+
+        if(pdfFile) {
+            let pdfDoc = null,
+                pageNum = 1,
+                pageIsRendering = false,
+                pageNumIsPending = null;
+                
+            const scale = 1.5,
+                  canvas = document.querySelector('#pdf-canvas'),
+                  ctx = canvas.getContext('2d');
+                  
+            const renderPage = num => {
+                pageIsRendering = true;
+                
+                pdfDoc.getPage(num).then(page => {
+                    const viewport = page.getViewport({ scale });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    const renderCtx = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    
+                    page.render(renderCtx).promise.then(() => {
+                        pageIsRendering = false;
+                        
+                        if (pageNumIsPending !== null) {
+                            renderPage(pageNumIsPending);
+                            pageNumIsPending = null;
+                        }
+                    });
+                    
+                    document.querySelector('#page-num').textContent = num;
+                });
+            };
+            
+            const queueRenderPage = num => {
+                if (pageIsRendering) {
+                    pageNumIsPending = num;
+                } else {
+                    renderPage(num);
+                }
+            };
+            
+            const showPrevPage = () => {
+                if (pageNum <= 1) return;
+                pageNum--;
+                queueRenderPage(pageNum);
+            };
+            
+            const showNextPage = () => {
+                if (pageNum >= pdfDoc.numPages) return;
+                pageNum++;
+                queueRenderPage(pageNum);
+            };
+            
+            pdfjsLib.getDocument(pdfFile).promise.then(pdfDoc_ => {
+                pdfDoc = pdfDoc_;
+                document.querySelector('#page-count').textContent = pdfDoc.numPages;
+                renderPage(pageNum);
+            }).catch(err => {
+                console.error('Error loading PDF:', err);
+                ctx.font = "20px Inter, sans-serif";
+                ctx.fillStyle = "black";
+                ctx.fillText("Could not load the PDF.", 50, 50);
+                ctx.fillText(`Ensure '${pdfFile}' is accessible.`, 50, 80);
+                ctx.fillText(`Remember to run a local server if testing locally.`, 50, 110);
+            });
+            
+            document.querySelector('#prev-page').addEventListener('click', showPrevPage);
+            document.querySelector('#next-page').addEventListener('click', showNextPage);
+        } else {
+            const canvas = document.querySelector('#pdf-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 600;
+            canvas.height = 400;
+            ctx.font = "20px Inter, sans-serif";
+            ctx.fillStyle = "black";
+            ctx.fillText("No PDF file specified in the URL.", 50, 50);
+        }
+    </script>
+</body>
+</html>

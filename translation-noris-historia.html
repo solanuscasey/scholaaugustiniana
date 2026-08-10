@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia Pelagiana - Translation</title>
+    <meta name="description" content="English translation and original text of Historia Pelagiana.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Include PDF.js for rendering PDF pages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        .pdf-viewer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #232026;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            margin: 2rem 0;
+        }
+        .pdf-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .pdf-btn {
+            background: var(--gold);
+            color: #111;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.2s, background 0.3s;
+        }
+        .pdf-btn:hover {
+            background: #e6c860;
+            transform: scale(1.05);
+        }
+        .page-info {
+            font-family: var(--font-body);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        #pdf-canvas {
+            border: 1px solid var(--glass-border);
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #fff; /* White background for the document */
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="logo">Academia Augustiniana</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="authors.html" class="active">Authors</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+    <main class="page-container">
+        <div class="reader-container" style="max-width: 1000px;">
+            <header class="reader-header">
+                <h1 class="reader-title">Historia Pelagiana</h1>
+                <p class="reader-author">By Cardinal Henry Noris</p>
+            </header>
+            
+            <div class="translation-content">
+                <p style="text-align: center;">Read the pages of Historia Pelagiana below.</p>
+                
+                <div class="pdf-viewer-container">
+                    <div class="pdf-controls">
+                        <button id="prev-page" class="pdf-btn">Previous</button>
+                        <span class="page-info">Page <span id="page-num"></span> of <span id="page-count"></span></span>
+                        <button id="next-page" class="pdf-btn">Next</button>
+                    </div>
+                    <!-- Canvas element where the PDF will be rendered -->
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="original-link-container">
+                <a href="#" class="original-link">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Original Reference
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- PDF.js logic -->
+    <script>
+        const url = 'Henry Noris HISTORIA PELAGIANA.pdf';
+        
+        let pdfDoc = null,
+            pageNum = 1,
+            pageIsRendering = false,
+            pageNumIsPending = null;
+            
+        const scale = 1.5, // Scale controls the resolution/size of the rendered page
+              canvas = document.querySelector('#pdf-canvas'),
+              ctx = canvas.getContext('2d');
+              
+        // Render the page
+        const renderPage = num => {
+            pageIsRendering = true;
+            
+            pdfDoc.getPage(num).then(page => {
+                const viewport = page.getViewport({ scale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderCtx = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                page.render(renderCtx).promise.then(() => {
+                    pageIsRendering = false;
+                    
+                    if (pageNumIsPending !== null) {
+                        renderPage(pageNumIsPending);
+                        pageNumIsPending = null;
+                    }
+                });
+                
+                document.querySelector('#page-num').textContent = num;
+            });
+        };
+        
+        // Check for pending page rendering
+        const queueRenderPage = num => {
+            if (pageIsRendering) {
+                pageNumIsPending = num;
+            } else {
+                renderPage(num);
+            }
+        };
+        
+        // Show Prev Page
+        const showPrevPage = () => {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        };
+        
+        // Show Next Page
+        const showNextPage = () => {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        };
+        
+        // Get Document
+        pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+            pdfDoc = pdfDoc_;
+            document.querySelector('#page-count').textContent = pdfDoc.numPages;
+            
+            renderPage(pageNum);
+        }).catch(err => {
+            console.error('Error loading PDF:', err);
+            // Draw an error message on the canvas if the PDF is missing
+            ctx.font = "20px Inter, sans-serif";
+            ctx.fillStyle = "black";
+            ctx.fillText("Could not load the PDF.", 50, 50);
+            ctx.fillText("Ensure 'Henry Noris HISTORIA PELAGIANA.pdf' is in the folder.", 50, 80);
+        });
+        
+        // Button Events
+        document.querySelector('#prev-page').addEventListener('click', showPrevPage);
+        document.querySelector('#next-page').addEventListener('click', showNextPage);
+    </script>
+</body>
+</html>

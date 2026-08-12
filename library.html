@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="nav.js" defer></script>
 </head>
 <body>
     <nav class="navbar glass">
@@ -89,6 +90,12 @@
                 el.details.innerHTML = `<h2>Select a text</h2><p>Select an entry from the catalog to display the PDF document viewer.</p>`;
                 el.viewer.src = "";
                 el.viewer.style.display = "none";
+                return;
+            }
+
+            // If mobile view, open in full screen reader overlay instead of inline iframe
+            if (window.innerWidth <= 768) {
+                openInReader(id);
                 return;
             }
 
@@ -192,7 +199,10 @@
 
             initTraditions();
             renderList();
-            if (state.texts.length > 0) selectText(state.texts[0].id);
+            // On desktop, auto-select first text. On mobile, do not auto-open reader overlay
+            if (state.texts.length > 0 && window.innerWidth > 768) {
+                selectText(state.texts[0].id);
+            }
         }
 
         el.search.addEventListener("input", renderList);

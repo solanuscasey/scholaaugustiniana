@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authors - Academia Augustiniana</title>
-    <meta name="description" content="Prominent Augustinian authors and their translated works.">
+    <title>Author Works - Academia Augustiniana</title>
+    <meta name="description" content="Works by an Augustinian author.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -22,17 +22,29 @@
         </ul>
     </nav>
     <main class="page-container">
-        <h1 class="page-title">Augustinian Authors</h1>
-        <p id="authors-status" style="text-align:center;color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;min-height:1.2em;"></p>
-        <div id="authors-grid" class="authors-grid">
-            <!-- Author cards are dynamically injected here -->
-        </div>
+        <h1 id="author-page-title" class="page-title">Works</h1>
+        <div id="works-list" class="works-list"></div>
     </main>
 
     <script src="library-data.js"></script>
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            initAuthors("authors-grid", "authors-status");
+            const params     = new URLSearchParams(window.location.search);
+            const authorName = params.get("name") || "";
+
+            // Update page title and browser tab
+            const titleEl = document.getElementById("author-page-title");
+            if (authorName) {
+                titleEl.textContent = `Works by ${authorName}`;
+                document.title = `Works by ${authorName} - Academia Augustiniana`;
+            } else {
+                titleEl.textContent = "Author Not Found";
+                document.getElementById("works-list").innerHTML =
+                    `<p style="text-align:center;color:var(--text-secondary);padding:2rem 0;">No author name was specified in the URL.</p>`;
+                return;
+            }
+
+            initAuthorWorks(authorName, "works-list");
         });
     </script>
 </body>

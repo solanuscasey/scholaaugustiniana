@@ -8,8 +8,9 @@
 const LIBRARY_CONFIG = {
     USE_GOOGLE_SHEET: true,
     SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
-    API_KEY: "AIzaSyDfsHvbiANU-C8qtOWlfIFQIWB8WVtjjzE",
-    SHEET_NAME: "Sheet1"
+    API_KEY: "AIzaSyC7b4-tUYCCIwctZ6YBre59ebFum6dOveo",
+    SHEET_NAME: "Sheet1",
+    AUTHORS_SHEET_NAME: "Sheet2"   // Second tab: Name | Description | URL | Public
 };
 
 // Column header names as they appear in the Sheet (row 1).
@@ -25,6 +26,14 @@ const LIBRARY_COLUMNS = {
     public:      "Public",
     description: "Description",
     imageUrl:    "Image URL"   // Column J – Drive link/ID for the cover PNG
+};
+
+// Column header names for the Authors tab (Sheet2).
+const AUTHORS_COLUMNS = {
+    name:        "Name",
+    description: "Description",
+    imageUrl:    "URL",     // Drive link/ID for the portrait image
+    public:      "Public"
 };
 
 const LIBRARY_DEMO_TEXTS = [
@@ -354,4 +363,99 @@ async function initAuthorWorks(authorName, containerId) {
     works.forEach(w => { _worksById[w.id] = w; });
 
     container.innerHTML = works.map(renderWorkCard).join("");
+}
+
+// ─── Authors Sheet Parsing ────────────────────────────────────────────────────
+
+function parseAuthorRows(values) {
+    const [headers, ...rows] = values;
+    if (!headers) return [];
+
+    return rows.map(row => {
+        const record = {};
+        headers.forEach((header, index) => {
+            record[normalize(header)] = normalize(row[index]);
+        });
+
+        return {
+            name:        record[AUTHORS_COLUMNS.name],
+            description: record[AUTHORS_COLUMNS.description],
+            imageUrl:    record[AUTHORS_COLUMNS.imageUrl] || "",
+            public:      record[AUTHORS_COLUMNS.public]
+        };
+    }).filter(a => a.name && isPublic(a));
+}
+
+/** Fetch all public authors from Sheet2 of the Google Sheet. */
+async function loadAuthors() {
+    if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) return [];
+
+    const sheetId  = getDriveFileId(LIBRARY_CONFIG.SHEET_ID) || LIBRARY_CONFIG.SHEET_ID;
+    const range    = `${LIBRARY_CONFIG.AUTHORS_SHEET_NAME}!A:D`;
+    const endpoint =
+        `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}` +
+        `/values/${encodeURIComponent(range)}?key=${encodeURIComponent(LIBRARY_CONFIG.API_KEY)}`;
+
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}.`);
+
+    const data = await response.json();
+    if (!data.values) throw new Error("No values found in Authors sheet.");
+
+    return parseAuthorRows(data.values);
+}
+
+// ─── Author Card Renderer ─────────────────────────────────────────────────────
+
+/**
+ * Render a single author card in the same style as the static authors.html grid.
+ * The "View Works" button links to author.html?name=<encoded name>.
+ */
+function renderAuthorCard(author) {
+    const name        = escapeHtml(author.name);
+    const description = author.description ? escapeHtml(author.description) : "";
+    const imgUrl      = author.imageUrl ? getDriveImageUrl(author.imageUrl) : "";
+    const worksUrl    = `author.html?name=${encodeURIComponent(author.name)}`;
+
+    return `
+    <div class="author-card glass">
+        ${imgUrl
+            ? `<img src="${escapeHtml(imgUrl)}" alt="${name}" class="author-image" loading="lazy">`
+            : `<div class="author-image" style="display:flex;align-items:center;justify-content:center;background:rgba(212,175,55,0.05);font-family:var(--font-heading);font-size:3rem;color:var(--gold);">✦</div>`
+        }
+        <h2 class="author-name">${name}</h2>
+        ${description ? `<p>${description}</p>` : ""}
+        <a href="${escapeHtml(worksUrl)}" class="btn">View Works</a>
+    </div>`;
+}
+
+/**
+ * Load and render authors dynamically into a container.
+ *
+ * @param {string} containerId - ID of the element to render author cards into.
+ * @param {string} [statusId]  - Optional ID of a status/message element.
+ */
+async function initAuthors(containerId, statusId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const statusEl = statusId ? document.getElementById(statusId) : null;
+    if (statusEl) statusEl.textContent = "Loading authors…";
+
+    let authors;
+    try {
+        authors = await loadAuthors();
+        if (statusEl) statusEl.textContent = "";
+    } catch (err) {
+        console.error(err);
+        if (statusEl) statusEl.textContent = `Could not load authors: ${err.message}`;
+        authors = [];
+    }
+
+    if (authors.length === 0) {
+        container.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:2rem 0;grid-column:1/-1;">No authors are currently listed.</p>`;
+        return;
+    }
+
+    container.innerHTML = authors.map(renderAuthorCard).join("");
 }

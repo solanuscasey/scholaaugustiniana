@@ -144,7 +144,7 @@ body {
 #authors-section,
 #theses-section {
     background: linear-gradient(to bottom, transparent, var(--bg-dark) 250px, var(--bg-dark) 100%);
-    padding: 6rem 2rem 14rem 2rem;
+    padding: 6rem 2rem;
     min-height: 100vh;
 }
 
@@ -248,7 +248,7 @@ body {
     font-family: var(--font-heading);
     font-size: 1.5rem;
     color: var(--gold);
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.3rem;
     line-height: 1.3;
 }
 

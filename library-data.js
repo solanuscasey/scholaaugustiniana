@@ -9,8 +9,8 @@ const LIBRARY_CONFIG = {
     USE_GOOGLE_SHEET: true,
     SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
     API_KEY: "AIzaSyDfsHvbiANU-C8qtOWlfIFQIWB8WVtjjzE",
-    SHEET_NAME: "Sheet1",
-    AUTHORS_SHEET_NAME: "Sheet2"   // Second tab: Name | Description | URL | Public
+    SHEET_NAME: "Library",
+    AUTHORS_SHEET_NAME: "Authors"   // Second tab: Name | Description | URL | Public
 };
 
 // Column header names as they appear in the Sheet (row 1).

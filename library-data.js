@@ -8,7 +8,7 @@
 const LIBRARY_CONFIG = {
     USE_GOOGLE_SHEET: true,
     SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
-    API_KEY: "AIzaSyDfsHvbiANU-C8qtOWlfIFQIWB8WVtjjzE",
+    API_KEY: "AIzaSyC8_tt_9el-5cVDE-2cTLTDDmTdk5mkZRg",
     SHEET_NAME: "LibrarySheet",
     AUTHORS_SHEET_NAME: "AuthorsSheet",  // Second tab: Name | Description | URL | Public
     THESES_SHEET_NAME: "ThesesSheet"     // Third tab: ID | Title | Author | Tradition | Year | Tags | Topic | separator | Total Topic List

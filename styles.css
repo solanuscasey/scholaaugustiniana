@@ -94,7 +94,7 @@ body {
 
 .hero-content {
     text-align: center;
-    padding: 4rem;
+    padding: 2.5rem 3rem;
     border-radius: 8px;
     max-width: 800px;
     animation: fadeIn 1s ease-out forwards;
@@ -114,6 +114,10 @@ body {
     font-size: 1.25rem;
     color: var(--text-primary);
     margin-bottom: 2.5rem;
+}
+
+.hero p:last-child {
+    margin-bottom: 0;
 }
 
 .cta-button {
@@ -139,8 +143,9 @@ body {
 /* Authors & Theses Sections on Home / Theses Pages */
 #authors-section,
 #theses-section {
-    background: linear-gradient(to bottom, transparent, var(--bg-dark) 20%);
-    padding: 6rem 2rem;
+    background: linear-gradient(to bottom, transparent, var(--bg-dark) 250px, var(--bg-dark) 100%);
+    padding: 6rem 2rem 14rem 2rem;
+    min-height: 100vh;
 }
 
 /* Page Layout */

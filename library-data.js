@@ -7,7 +7,7 @@
 
 const LIBRARY_CONFIG = {
     USE_GOOGLE_SHEET: true,
-    SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
+    SHEET_ID: "https://docs.google.com/spreadsheets/d/1KZAMH-06uOULrvOuMnPFJlXbqEBzZGONQ4ncOlCa8b4/",
     API_KEY: "AIzaSyC8_tt_9el-5cVDE-2cTLTDDmTdk5mkZRg",
     SHEET_NAME: "LibrarySheet",
     AUTHORS_SHEET_NAME: "AuthorsSheet",  // Second tab: Name | Description | URL | Public

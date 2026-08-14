@@ -8,7 +8,7 @@
 const LIBRARY_CONFIG = {
     USE_GOOGLE_SHEET: true,
     SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
-    API_KEY: "AIzaSyC8_tt_9el-5cVDE-2cTLTDDmTdk5mkZRg",
+    API_KEY: "AIzaSyDfsHvbiANU-C8qtOWlfIFQIWB8WVtjjzE",
     SHEET_NAME: "LibrarySheet",
     AUTHORS_SHEET_NAME: "AuthorsSheet",  // Second tab: Name | Description | URL | Public
     THESES_SHEET_NAME: "ThesesSheet"     // Third tab: ID | Title | Author | Tradition | Year | Tags | Topic | separator | Total Topic List
@@ -517,29 +517,49 @@ async function initAuthors(containerId, statusId) {
 
 function parseThesesRows(values) {
     const [headers, ...rows] = values;
-    if (!headers) return { topicList: [], idTopicMap: [] };
+    if (!headers) return { topicList: [], idTopicMap: [], topicDescriptions: {} };
 
     const topicListSet = new Set();
+    const topicListOrdered = [];
     const idTopicMap = [];
+    const topicDescriptions = {};
 
     let idIdx = headers.findIndex(h => normalize(h).toLowerCase() === "id");
     let topicIdx = headers.findIndex(h => normalize(h).toLowerCase() === "topic");
     let totalTopicsIdx = headers.findIndex(h => normalize(h).toLowerCase() === "total topic list");
+    let descIdx = headers.findIndex(h => {
+        const norm = normalize(h).toLowerCase();
+        return norm.includes("description") || norm.includes("desc");
+    });
 
     if (idIdx === -1) idIdx = 0;
     if (topicIdx === -1) topicIdx = 6;
     if (totalTopicsIdx === -1) totalTopicsIdx = 8;
+    if (descIdx === -1) descIdx = 9;
 
     rows.forEach(row => {
         const id = normalize(row[idIdx]);
         const topic = normalize(row[topicIdx]);
         const totalTopic = normalize(row[totalTopicsIdx]);
+        const desc = normalize(row[descIdx]);
 
         if (totalTopic) {
             totalTopic.split(",").forEach(t => {
                 const trimmed = normalize(t);
-                if (trimmed) topicListSet.add(trimmed);
+                if (trimmed) {
+                    if (!topicListSet.has(trimmed)) {
+                        topicListSet.add(trimmed);
+                        topicListOrdered.push(trimmed);
+                    }
+                    if (desc && !topicDescriptions[trimmed]) {
+                        topicDescriptions[trimmed] = desc;
+                    }
+                }
             });
+        }
+
+        if (topic && desc && !topicDescriptions[topic]) {
+            topicDescriptions[topic] = desc;
         }
 
         if (id && topic) {
@@ -548,29 +568,35 @@ function parseThesesRows(values) {
     });
 
     return {
-        topicList: Array.from(topicListSet),
-        idTopicMap
+        topicList: topicListOrdered,
+        idTopicMap,
+        topicDescriptions
     };
 }
 
 async function loadThesesData() {
-    if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) return { topicList: [], idTopicMap: [] };
+    if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) return { topicList: [], idTopicMap: [], topicDescriptions: {} };
     const values = await fetchSheetRows(LIBRARY_CONFIG.THESES_SHEET_NAME || "ThesesSheet");
     return parseThesesRows(values);
 }
 
 /** Render a single topic card on theses.html */
-function renderTopicCard(topicName, worksCount) {
+function renderTopicCard(topicName, worksCount, description) {
     const topicEsc = escapeHtml(topicName);
     const topicUrl = `thesis-topic.html?topic=${encodeURIComponent(topicName)}`;
     const countLabel = worksCount === 1 ? "1 Work" : `${worksCount} Works`;
+    const descHtml = description ? `<p class="topic-description">${escapeHtml(description)}</p>` : "";
 
     return `
     <div class="topic-card glass">
-        <div class="topic-card-icon">📜</div>
-        <h2 class="topic-title">${topicEsc}</h2>
-        <p class="topic-count">${countLabel}</p>
-        <a href="${escapeHtml(topicUrl)}" class="btn">Explore Topic</a>
+        <div class="topic-card-body">
+            <h2 class="topic-title">${topicEsc}</h2>
+            ${descHtml}
+        </div>
+        <div class="topic-card-footer">
+            <span class="topic-count">${countLabel}</span>
+            <a href="${escapeHtml(topicUrl)}" class="btn">Explore Topic</a>
+        </div>
     </div>`;
 }
 
@@ -584,7 +610,7 @@ async function initThesesTopics(containerId, statusId) {
 
     try {
         const thesesData = await loadThesesData();
-        const { topicList, idTopicMap } = thesesData;
+        const { topicList, idTopicMap, topicDescriptions } = thesesData;
 
         if (statusEl) statusEl.textContent = "";
 
@@ -605,7 +631,9 @@ async function initThesesTopics(containerId, statusId) {
             });
         });
 
-        container.innerHTML = topicList.map(topic => renderTopicCard(topic, topicCounts[topic] || 0)).join("");
+        container.innerHTML = topicList.map(topic => 
+            renderTopicCard(topic, topicCounts[topic] || 0, topicDescriptions[topic] || "")
+        ).join("");
 
     } catch (err) {
         console.error(err);

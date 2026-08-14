@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theses - Academia Augustiniana</title>
-    <meta name="description" content="Explore Augustinian theses and theological topics across the centuries.">
+    <meta name="description" content="Explore the fundamental doctrines of the Augustinian tradition.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="nav.js" defer></script>
 </head>
-<body>
+<body class="home-body">
     <nav class="navbar glass">
         <div class="logo">Academia Augustiniana</div>
         <ul class="nav-links">
@@ -22,13 +22,22 @@
             <li><a href="about.html">About</a></li>
         </ul>
     </nav>
-    <main class="page-container">
-        <h1 class="page-title">Augustinian Theses</h1>
+    
+    <main class="hero">
+        <div class="hero-content glass">
+            <h1>Augustinian Theses</h1>
+            <p>Explore the fundamental doctrines of the Augustinian tradition</p>
+        </div>
+    </main>
+
+    <!-- Scroll down to Theses topics -->
+    <section id="theses-section">
+        <div class="page-title" style="border: none;">Augustinian Theses</div>
         <p id="theses-status" style="text-align:center;color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;min-height:1.2em;"></p>
         <div id="topics-grid" class="topics-grid">
             <!-- Topic cards are dynamically injected here -->
         </div>
-    </main>
+    </section>
 
     <script src="library-data.js"></script>
     <script>

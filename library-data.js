@@ -38,15 +38,15 @@ const AUTHORS_COLUMNS = {
 
 const LIBRARY_DEMO_TEXTS = [
     {
-        id: "demo-augustine",
-        title: "Demo: Confessions",
-        author: "Augustine of Hippo",
+        id: "Error",
+        title: "Somethings Gone Wrong",
+        author: "- Web Dev",
         tradition: "Patristic",
         year: 400,
         tags: "grace, conversion, autobiography",
         pdfUrl: "",
         public: "TRUE",
-        description: "Demo entry—add a real Drive PDF URL in your Sheet.",
+        description: "For some reason we cant pull the database, please try again in a few minutes",
         imageUrl: ""
     }
 ];

@@ -10,7 +10,8 @@ const LIBRARY_CONFIG = {
     SHEET_ID: "https://docs.google.com/spreadsheets/d/1jmZMO1afJ_hD4h9FKXwqLI3jnWJQJQPTOLbPN_QjjqE/",
     API_KEY: "AIzaSyDfsHvbiANU-C8qtOWlfIFQIWB8WVtjjzE",
     SHEET_NAME: "LibrarySheet",
-    AUTHORS_SHEET_NAME: "AuthorsSheet"   // Second tab: Name | Description | URL | Public
+    AUTHORS_SHEET_NAME: "AuthorsSheet",  // Second tab: Name | Description | URL | Public
+    THESES_SHEET_NAME: "ThesesSheet"     // Third tab: ID | Title | Author | Tradition | Year | Tags | Topic | separator | Total Topic List
 };
 
 // Column header names as they appear in the Sheet (row 1).
@@ -106,6 +107,76 @@ function toDrivePreviewUrl(urlOrId) {
 
 // ─── Sheet Parsing ───────────────────────────────────────────────────────────
 
+/** Simple CSV parser for GViz fallback */
+function parseCSV(text) {
+    const lines = [];
+    let line = [];
+    let entry = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i+1];
+        if (c === '"') {
+            if (inQuotes && next === '"') {
+                entry += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (c === ',' && !inQuotes) {
+            line.push(entry);
+            entry = '';
+        } else if ((c === '\r' || c === '\n') && !inQuotes) {
+            if (c === '\r' && next === '\n') i++;
+            line.push(entry);
+            entry = '';
+            if (line.length > 1 || line[0] !== '') {
+                lines.push(line);
+            }
+            line = [];
+        } else {
+            entry += c;
+        }
+    }
+    if (entry !== '' || line.length > 0) {
+        line.push(entry);
+        lines.push(line);
+    }
+    return lines;
+}
+
+/** Generic sheet values fetcher with Google API & GViz CSV fallback */
+async function fetchSheetRows(sheetName) {
+    const sheetId = getDriveFileId(LIBRARY_CONFIG.SHEET_ID) || LIBRARY_CONFIG.SHEET_ID;
+
+    if (LIBRARY_CONFIG.USE_GOOGLE_SHEET) {
+        try {
+            const range = `${sheetName}!A:Z`;
+            const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/${encodeURIComponent(range)}?key=${encodeURIComponent(LIBRARY_CONFIG.API_KEY)}`;
+            const response = await fetch(endpoint);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.values) return data.values;
+            }
+        } catch (e) {
+            console.warn(`Google Sheets API fetch failed for ${sheetName}, trying fallback:`, e);
+        }
+    }
+
+    try {
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        const csvResp = await fetch(csvUrl);
+        if (csvResp.ok) {
+            const csvText = await csvResp.text();
+            return parseCSV(csvText);
+        }
+    } catch (e) {
+        console.error(`GViz fallback failed for ${sheetName}:`, e);
+    }
+
+    throw new Error(`Could not load data from ${sheetName}`);
+}
+
 function parseLibraryRows(values) {
     const [headers, ...rows] = values;
     if (!headers) return [];
@@ -138,19 +209,13 @@ async function loadLibraryTexts() {
     if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) {
         texts = LIBRARY_DEMO_TEXTS.filter(isPublic);
     } else {
-        const sheetId  = getDriveFileId(LIBRARY_CONFIG.SHEET_ID) || LIBRARY_CONFIG.SHEET_ID;
-        const range    = `${LIBRARY_CONFIG.SHEET_NAME}!A:J`;
-        const endpoint =
-            `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}` +
-            `/values/${encodeURIComponent(range)}?key=${encodeURIComponent(LIBRARY_CONFIG.API_KEY)}`;
-
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}.`);
-
-        const data = await response.json();
-        if (!data.values) throw new Error("No values found in Google Sheet.");
-
-        texts = parseLibraryRows(data.values);
+        try {
+            const values = await fetchSheetRows(LIBRARY_CONFIG.SHEET_NAME);
+            texts = parseLibraryRows(values);
+        } catch (err) {
+            console.error("Failed to load library texts:", err);
+            texts = LIBRARY_DEMO_TEXTS.filter(isPublic);
+        }
     }
 
     // Populate module-level reader state so reader overlay works immediately
@@ -389,20 +454,8 @@ function parseAuthorRows(values) {
 /** Fetch all public authors from Sheet2 of the Google Sheet. */
 async function loadAuthors() {
     if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) return [];
-
-    const sheetId  = getDriveFileId(LIBRARY_CONFIG.SHEET_ID) || LIBRARY_CONFIG.SHEET_ID;
-    const range    = `${LIBRARY_CONFIG.AUTHORS_SHEET_NAME}!A:D`;
-    const endpoint =
-        `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}` +
-        `/values/${encodeURIComponent(range)}?key=${encodeURIComponent(LIBRARY_CONFIG.API_KEY)}`;
-
-    const response = await fetch(endpoint);
-    if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}.`);
-
-    const data = await response.json();
-    if (!data.values) throw new Error("No values found in Authors sheet.");
-
-    return parseAuthorRows(data.values);
+    const values = await fetchSheetRows(LIBRARY_CONFIG.AUTHORS_SHEET_NAME);
+    return parseAuthorRows(values);
 }
 
 // ─── Author Card Renderer ─────────────────────────────────────────────────────
@@ -459,3 +512,154 @@ async function initAuthors(containerId, statusId) {
 
     container.innerHTML = authors.map(renderAuthorCard).join("");
 }
+
+// ─── Theses Sheet Parsing & Rendering ────────────────────────────────────────
+
+function parseThesesRows(values) {
+    const [headers, ...rows] = values;
+    if (!headers) return { topicList: [], idTopicMap: [] };
+
+    const topicListSet = new Set();
+    const idTopicMap = [];
+
+    let idIdx = headers.findIndex(h => normalize(h).toLowerCase() === "id");
+    let topicIdx = headers.findIndex(h => normalize(h).toLowerCase() === "topic");
+    let totalTopicsIdx = headers.findIndex(h => normalize(h).toLowerCase() === "total topic list");
+
+    if (idIdx === -1) idIdx = 0;
+    if (topicIdx === -1) topicIdx = 6;
+    if (totalTopicsIdx === -1) totalTopicsIdx = 8;
+
+    rows.forEach(row => {
+        const id = normalize(row[idIdx]);
+        const topic = normalize(row[topicIdx]);
+        const totalTopic = normalize(row[totalTopicsIdx]);
+
+        if (totalTopic) {
+            totalTopic.split(",").forEach(t => {
+                const trimmed = normalize(t);
+                if (trimmed) topicListSet.add(trimmed);
+            });
+        }
+
+        if (id && topic) {
+            idTopicMap.push({ id, topic });
+        }
+    });
+
+    return {
+        topicList: Array.from(topicListSet),
+        idTopicMap
+    };
+}
+
+async function loadThesesData() {
+    if (!LIBRARY_CONFIG.USE_GOOGLE_SHEET) return { topicList: [], idTopicMap: [] };
+    const values = await fetchSheetRows(LIBRARY_CONFIG.THESES_SHEET_NAME || "ThesesSheet");
+    return parseThesesRows(values);
+}
+
+/** Render a single topic card on theses.html */
+function renderTopicCard(topicName, worksCount) {
+    const topicEsc = escapeHtml(topicName);
+    const topicUrl = `thesis-topic.html?topic=${encodeURIComponent(topicName)}`;
+    const countLabel = worksCount === 1 ? "1 Work" : `${worksCount} Works`;
+
+    return `
+    <div class="topic-card glass">
+        <div class="topic-card-icon">📜</div>
+        <h2 class="topic-title">${topicEsc}</h2>
+        <p class="topic-count">${countLabel}</p>
+        <a href="${escapeHtml(topicUrl)}" class="btn">Explore Topic</a>
+    </div>`;
+}
+
+/** Load and render all topics from Column I on theses.html */
+async function initThesesTopics(containerId, statusId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const statusEl = statusId ? document.getElementById(statusId) : null;
+    if (statusEl) statusEl.textContent = "Loading Augustinian topics…";
+
+    try {
+        const thesesData = await loadThesesData();
+        const { topicList, idTopicMap } = thesesData;
+
+        if (statusEl) statusEl.textContent = "";
+
+        if (topicList.length === 0) {
+            container.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:2rem 0;grid-column:1/-1;">No thesis topics are currently listed.</p>`;
+            return;
+        }
+
+        // Count works per topic by checking idTopicMap
+        const topicCounts = {};
+        idTopicMap.forEach(item => {
+            const itemTopics = item.topic.split(",").map(t => normalize(t).toLowerCase());
+            topicList.forEach(t => {
+                const tNorm = normalize(t).toLowerCase();
+                if (itemTopics.includes(tNorm) || item.topic.toLowerCase().includes(tNorm)) {
+                    topicCounts[t] = (topicCounts[t] || 0) + 1;
+                }
+            });
+        });
+
+        container.innerHTML = topicList.map(topic => renderTopicCard(topic, topicCounts[topic] || 0)).join("");
+
+    } catch (err) {
+        console.error(err);
+        if (statusEl) statusEl.textContent = `Could not load topics: ${err.message}`;
+    }
+}
+
+/** Load and render works for a selected topic on thesis-topic.html */
+async function initTopicWorks(topicName, containerId, titleId, statusId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const titleEl = titleId ? document.getElementById(titleId) : null;
+    if (titleEl) titleEl.textContent = `Topic: ${topicName}`;
+
+    const statusEl = statusId ? document.getElementById(statusId) : null;
+    if (statusEl) statusEl.textContent = "Loading topic works…";
+
+    try {
+        const [thesesData, libraryTexts] = await Promise.all([
+            loadThesesData(),
+            loadLibraryTexts()
+        ]);
+
+        const normTopic = normalize(topicName).toLowerCase();
+
+        // Identify matching IDs from Column A in ThesesSheet whose Column G matches/contains topicName
+        const matchingIds = new Set();
+        thesesData.idTopicMap.forEach(item => {
+            const itemTopics = item.topic.split(",").map(t => normalize(t).toLowerCase());
+            if (itemTopics.includes(normTopic) || item.topic.toLowerCase().includes(normTopic)) {
+                matchingIds.add(normalize(item.id));
+            }
+        });
+
+        // Cross-reference with LibrarySheet entries by ID
+        const matchingWorks = libraryTexts.filter(work => matchingIds.has(normalize(work.id)));
+
+        if (statusEl) statusEl.textContent = "";
+
+        if (matchingWorks.length === 0) {
+            container.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:2rem 0;">No works found for this topic.</p>`;
+            return;
+        }
+
+        // Store works for reader overlay
+        _readerWorks = matchingWorks;
+        matchingWorks.forEach(w => { _worksById[w.id] = w; });
+
+        container.innerHTML = matchingWorks.map(renderWorkCard).join("");
+
+    } catch (err) {
+        console.error(err);
+        if (statusEl) statusEl.textContent = `Error loading works for topic: ${err.message}`;
+    }
+}
+

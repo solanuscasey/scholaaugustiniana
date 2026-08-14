@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic Resources - Academia Augustiniana</title>
+    <meta name="description" content="Augustinian works and resources for a specific thesis topic.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="logo">Academia Augustiniana</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="authors.html">Authors</a></li>
+            <li><a href="library.html">Library</a></li>
+            <li><a href="theses.html" class="active">Theses</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+    <main class="page-container">
+        <h1 id="topic-page-title" class="page-title">Topic Works</h1>
+        <p id="topic-status" style="text-align:center;color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;min-height:1.2em;"></p>
+        <div id="works-list" class="works-list"></div>
+    </main>
+
+    <script src="library-data.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            const topicName = params.get("topic") || "";
+
+            const titleEl = document.getElementById("topic-page-title");
+            if (topicName) {
+                titleEl.textContent = `Topic: ${topicName}`;
+                document.title = `${topicName} - Augustinian Theses`;
+            } else {
+                titleEl.textContent = "Topic Not Specified";
+                document.getElementById("works-list").innerHTML =
+                    `<p style="text-align:center;color:var(--text-secondary);padding:2rem 0;">No topic was specified in the URL.</p>`;
+                return;
+            }
+
+            initTopicWorks(topicName, "works-list", "topic-page-title", "topic-status");
+        });
+    </script>
+</body>
+</html>

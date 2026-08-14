@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theses - Academia Augustiniana</title>
+    <meta name="description" content="Explore Augustinian theses and theological topics across the centuries.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="logo">Academia Augustiniana</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="authors.html">Authors</a></li>
+            <li><a href="library.html">Library</a></li>
+            <li><a href="theses.html" class="active">Theses</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+    <main class="page-container">
+        <h1 class="page-title">Augustinian Theses</h1>
+        <p id="theses-status" style="text-align:center;color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem;min-height:1.2em;"></p>
+        <div id="topics-grid" class="topics-grid">
+            <!-- Topic cards are dynamically injected here -->
+        </div>
+    </main>
+
+    <script src="library-data.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            initThesesTopics("topics-grid", "theses-status");
+        });
+    </script>
+</body>
+</html>
